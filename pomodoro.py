@@ -26,11 +26,8 @@ class TimeDuration(wx.Timer):
     def formatted_time_left(self):
         hours = self.time_left / 60
         mins = self.time_left % 60
-        fmt_str = str(hours) + ":" + str(mins)
-        if mins == 0:
-            return fmt_str  + "0"
-        else:
-            return fmt_str
+        fmt_str = str(hours).zfill(2) + ":" + str(mins).zfill(2)
+        return fmt_str
 
     def on_update(self, event):
         if self.is_complete():
@@ -44,18 +41,21 @@ class TimeDuration(wx.Timer):
         self.mark_as_complete()
 
 class Pomodoro(TimeDuration):
-    Duration = 3
+    Duration = 25 * 60
 
     def on_completed(self):
         TimeDuration.on_completed(self)
         self.parent.break_timer.Start()
         self.parent.current_timer = self.parent.break_timer
         self.parent.set_defaults()
+        self.parent.status_bar.SetStatusText("Break Time")
+        self.parent.media_player.Play()
 
 class Break(TimeDuration):
-    Duration = 2
+    Duration = 5 * 60
 
     def on_completed(self):
         TimeDuration.on_completed(self)
         self.parent.current_timer = self.parent.pomodoro_timer
         self.parent.set_defaults()
+        self.parent.media_player.Play()
