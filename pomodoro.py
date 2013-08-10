@@ -1,5 +1,41 @@
 import wx
+import datetime
+from time import strptime
+from sqlalchemy import create_engine
+from sqlalchemy import Column, Integer, Date
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+ 
+Engine = create_engine('sqlite:///pomodoros.db', echo=False)
+Base = declarative_base()
 
+def get_first_day_of_week(date):
+    day_of_week = datetime.date(*strptime(str(date), '%Y-%m-%d')[0:3]).weekday()
+    start = date - datetime.timedelta(days=day_of_week)
+    end = date + datetime.timedelta(days=6 - day_of_week)
+    return start,end
+
+class PomodoroLog(Base):
+    __tablename__ = "pomodorologs"
+ 
+    id = Column(Integer, primary_key=True)
+    completed_at = Column(Date, default=datetime.date.today())
+
+    def __init__(self, completed_at=None):
+        if completed_at is not None: self.completed_at = completed_at
+        
+    @staticmethod
+    def get_logs():
+        today = Session.query(PomodoroLog).filter(PomodoroLog.completed_at == datetime.date.today()).count()
+        start, end = get_first_day_of_week(datetime.date.today())
+        this_week = Session.query(PomodoroLog).filter(PomodoroLog.completed_at.between(start, end)).count()
+        all_time = Session.query(PomodoroLog).count()
+        return [today, this_week, all_time]
+    
+Base.metadata.create_all(Engine)
+SessionMaker = sessionmaker(bind=Engine)
+Session = SessionMaker()
+ 
 class TimeDuration(wx.Timer):
     Duration = 0
     
@@ -59,3 +95,5 @@ class Break(TimeDuration):
         self.parent.current_timer = self.parent.pomodoro_timer
         self.parent.set_defaults()
         self.parent.media_player.Play()
+        Session.add(PomodoroLog())
+        Session.commit()
