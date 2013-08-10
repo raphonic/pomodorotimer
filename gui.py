@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import wx
 import wx.lib.agw.gradientbutton as GB
 import wx.media
